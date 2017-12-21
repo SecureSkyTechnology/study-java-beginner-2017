@@ -1,5 +1,6 @@
 package com.secureskytech.javabeginner2017.sample.httpproxy;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
@@ -13,7 +14,12 @@ import io.netty.handler.codec.http.HttpRequest;
 
 public class SampleHttpProxyFiltersSourceImpl extends HttpFiltersSourceAdapter {
 
+    private final File dataDir;
     private long httpCount = 0L;
+
+    public SampleHttpProxyFiltersSourceImpl(final File dataDir) {
+        this.dataDir = dataDir;
+    }
 
     @Override
     public HttpFilters filterRequest(HttpRequest originalRequest, ChannelHandlerContext ctx) {
@@ -41,6 +47,7 @@ public class SampleHttpProxyFiltersSourceImpl extends HttpFiltersSourceAdapter {
         return new SampleHttpProxyFiltersImpl(
             originalRequest,
             ctx,
+            dataDir,
             (InetSocketAddress) ctx.channel().remoteAddress(),
             httpCount);
     }

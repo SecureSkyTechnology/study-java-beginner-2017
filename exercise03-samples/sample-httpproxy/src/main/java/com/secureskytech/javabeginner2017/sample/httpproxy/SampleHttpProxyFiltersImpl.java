@@ -1,6 +1,10 @@
 package com.secureskytech.javabeginner2017.sample.httpproxy;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 import org.littleshoot.proxy.HttpFiltersAdapter;
@@ -8,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+
+import com.google.common.io.Files;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -26,6 +32,8 @@ public class SampleHttpProxyFiltersImpl extends HttpFiltersAdapter {
     private static Logger LOG = LoggerFactory.getLogger(SampleHttpProxyFiltersImpl.class);
     private final Marker m;
     private final InetSocketAddress clientAddress;
+    private final File dataDir;
+    private final long httpCount;
     private boolean isHttps = false;
     private InetSocketAddress connectedRemoteAddress;
 
@@ -49,12 +57,38 @@ public class SampleHttpProxyFiltersImpl extends HttpFiltersAdapter {
     private final AttributeKey<InetSocketAddress> resolvedRemoteAddressKey =
         AttributeKey.valueOf("resolvedRemoteAddress");
 
-    public SampleHttpProxyFiltersImpl(HttpRequest originalRequest, ChannelHandlerContext ctx,
+    public SampleHttpProxyFiltersImpl(HttpRequest originalRequest, ChannelHandlerContext ctx, final File dataDir,
             final InetSocketAddress clientAddress, final long httpCount) {
         super(originalRequest, ctx);
         this.clientAddress = clientAddress;
         this.m = MarkerFactory.getMarker("http#" + httpCount);
+        this.httpCount = httpCount;
+        this.dataDir = dataDir;
         LOG.debug(m, "client IP : {}", clientAddress.toString());
+    }
+
+    private void saveRequest(FullHttpRequest fhr) {
+        LocalDateTime ldt0 = LocalDateTime.now();
+        DateTimeFormatter dtf0 = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
+        final File dataf = new File(dataDir, ldt0.format(dtf0) + "_" + this.httpCount + ".req");
+        byte[] asByte = SampleNettyUtil.FullHttpRequestToBytes(fhr.copy());
+        try {
+            Files.write(asByte, dataf);
+        } catch (IOException e) {
+            LOG.debug(m, "saveRequest() error", e);
+        }
+    }
+
+    private void saveResponse(FullHttpResponse fhr) {
+        LocalDateTime ldt0 = LocalDateTime.now();
+        DateTimeFormatter dtf0 = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
+        final File dataf = new File(dataDir, ldt0.format(dtf0) + "_" + this.httpCount + ".res");
+        byte[] asByte = SampleNettyUtil.FullHttpResponseToBytes(fhr.copy());
+        try {
+            Files.write(asByte, dataf);
+        } catch (IOException e) {
+            LOG.debug(m, "saveResponse() error", e);
+        }
     }
 
     @Override
@@ -96,6 +130,7 @@ public class SampleHttpProxyFiltersImpl extends HttpFiltersAdapter {
             FullHttpRequest fhr = (FullHttpRequest) httpObject;
             Attribute<InetSocketAddress> resolvedRemoteAddressAttr = this.ctx.attr(this.resolvedRemoteAddressKey);
             InetSocketAddress currentResolved = resolvedRemoteAddressAttr.get();
+            this.saveRequest(fhr);
             LOG.trace(
                 m,
                 "proxyToServerRequest() : https?{} method={} client={}, remote={} url={}",
@@ -127,20 +162,20 @@ public class SampleHttpProxyFiltersImpl extends HttpFiltersAdapter {
     @Override
     public HttpObject serverToProxyResponse(HttpObject httpObject) {
         LOG.trace(m, "serverToProxyResponse()");
-        if (!(httpObject instanceof FullHttpResponse)) {
-            return httpObject;
+        if (httpObject instanceof FullHttpResponse) {
+            FullHttpResponse fhr = (FullHttpResponse) httpObject;
+            final HttpResponseStatus status = fhr.getStatus();
+            final HttpVersion version = fhr.getProtocolVersion();
+            final long contentLength = HttpHeaders.getContentLength(fhr, 0L);
+            this.saveResponse(fhr);
+            LOG.debug(
+                m,
+                "serverToProxyResponse(): {} {} {}, length={}",
+                version.text(),
+                status.code(),
+                status.reasonPhrase(),
+                contentLength);
         }
-        FullHttpResponse fhr = (FullHttpResponse) httpObject;
-        final HttpResponseStatus status = fhr.getStatus();
-        final HttpVersion version = fhr.getProtocolVersion();
-        final long contentLength = HttpHeaders.getContentLength(fhr, 0L);
-        LOG.debug(
-            m,
-            "serverToProxyResponse(): {} {} {}, length={}",
-            version.text(),
-            status.code(),
-            status.reasonPhrase(),
-            contentLength);
         return httpObject;
     }
 

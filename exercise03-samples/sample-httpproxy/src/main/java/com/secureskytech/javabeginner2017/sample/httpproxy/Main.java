@@ -4,10 +4,12 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.net.InetSocketAddress;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -27,6 +29,7 @@ public class Main {
     JSpinner spnProxyPort;
     JButton btnStart;
     JButton btnStop;
+    File dataDir = new File(".");
     SampleHttpProxyServer proxyServer;
 
     public Main() {
@@ -47,14 +50,27 @@ public class Main {
         spnProxyPort.setPreferredSize(new Dimension(50, 20));
         pane.add(spnProxyPort);
 
+        JButton btnSelectRootDir = new JButton("select data dir");
+        btnSelectRootDir.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser filechooser = new JFileChooser(".");
+                filechooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                int selected = filechooser.showOpenDialog(frame);
+                if (selected == JFileChooser.APPROVE_OPTION) {
+                    dataDir = filechooser.getSelectedFile();
+                    LOG.info(dataDir.getAbsolutePath());
+                }
+            }
+        });
+        pane.add(btnSelectRootDir);
+
         btnStart = new JButton("start");
         btnStart.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 LOG.info("starting ...");
                 try {
-                    proxyServer =
-                        new SampleHttpProxyServer(
-                            new InetSocketAddress("0.0.0.0", Integer.parseInt(spnProxyPort.getValue().toString())));
+                    final int portnum = Integer.parseInt(spnProxyPort.getValue().toString());
+                    proxyServer = new SampleHttpProxyServer(new InetSocketAddress("0.0.0.0", portnum), dataDir);
                     proxyServer.start();
                     LOG.info("started.");
                     btnStart.setEnabled(false);
