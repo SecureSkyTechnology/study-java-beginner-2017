@@ -2,7 +2,7 @@
 
 GUIでポート番号を指定できる、Netty + [LittleProxy](https://github.com/adamfisk/LittleProxy) + [MITM with LittleProxy](https://github.com/lightbody/browsermob-proxy/tree/master/mitm) を使ったローカルHTTPプロキシのサンプルです。
 
-HTTP通信ログをh2dbでインメモリで保持し、Springを使ったWebUIで表示できます。
+HTTPリクエスト/レスポンスをそれぞれ ".req" / ".res" という拡張子で保存します。保存するディレクトリをGUI上で選択できます。
 
 ## requirement
 
