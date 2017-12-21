@@ -14,3 +14,18 @@ Javaについては入門レベルの知識を前提としていました。
 - OS : Windows / Mac / Linux
 - JDK8
 - Maven 3系
+
+説明資料:
+- 3つのレッスンに分けています。
+- LESSON-01.md, LESSON-02.md, LESSON-03.md を順に参照してください。
+- 補足資料については APPENDIX.md を参照してください。
+
+
+----
+資料・サンプルコード作成者 : 坂本 昌彦 (研究開発部所属, 社内で使用するWebアプリケーション診断ツールの開発などに従事)
+* Mail : sakamoto@securesky-tech.com
+* Twitter : https://twitter.com/msakamoto_sf
+* Facebook: https://www.facebook.com/masahiko.sakamoto.75
+* GitHub : https://github.com/msakamoto-sf
+
+本資料・サンプルコードに関するご意見・お問い合わせは坂本までお願いします。
